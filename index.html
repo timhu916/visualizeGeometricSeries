@@ -45,7 +45,7 @@
         .slide {
             display: none;
             flex: 1;
-            padding: 20px 20px 160px 20px; 
+            padding: 20px 20px 160px 20px; /* 移动端减少内边距 */
             overflow-y: auto;
         }
         .slide.active {
@@ -67,7 +67,7 @@
                 align-items: center;
             }
             .slide {
-                padding: 40px 60px 100px 60px; 
+                padding: 40px 60px 100px 60px;
             }
         }
         .left-panel {
@@ -802,13 +802,7 @@
         }
     });
 
-    // --- 新增：画布自适应缩放逻辑 ---
-    function getCanvasScale(canvas) {
-        const rect = canvas.getBoundingClientRect();
-        const scaleX = rect.width / canvas.width;
-        const scaleY = rect.height / canvas.height;
-        return Math.min(scaleX, scaleY); // 保持比例的缩放因子
-    }
+
 
     // --- Helper to draw rects ---
     function drawRect(ctx, x, y, w, h, fill) {
@@ -832,8 +826,7 @@
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         // 适配画布缩放：重置变换矩阵
         ctx.setTransform(1, 0, 0, 1, 0, 0);
-        const scale = getCanvasScale(canvas);
-        ctx.scale(scale, scale); // 应用缩放，保证图形比例正确
+        
         
         const w = canvas.width, h = canvas.height;
 
@@ -1005,8 +998,6 @@
         const ctxCover = document.getElementById('canvas-cover').getContext('2d');
         ctxCover.clearRect(0, 0, ctxCover.canvas.width, ctxCover.canvas.height);
         ctxCover.setTransform(1, 0, 0, 1, 0, 0);
-        const scale = getCanvasScale(ctxCover.canvas);
-        ctxCover.scale(scale, scale);
         ctxCover.translate(200, 200); let size = 130;
         for(let i=0; i<6; i++) {
             ctxCover.fillStyle = (i%2===0) ? colorOrange : colorBlue;
