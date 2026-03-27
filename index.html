@@ -1,0 +1,851 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Visualize Infinite Geometrical Series</title>
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <style>
+        :root {
+            --primary-color: #2C73FF;
+            --secondary-color: #F29F1A;
+            --bg-color: #f9fafb;
+            --text-color: #1f2937;
+        }
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #e5e7eb;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            overflow: hidden;
+        }
+        .slide-container {
+            width: 92vw;
+            height: 92vh;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        .slide {
+            display: none;
+            flex: 1;
+            padding: 40px 60px;
+            overflow-y: auto;
+        }
+        .slide.active {
+            display: flex;
+            flex-direction: column;
+        }
+        /* 布局样式 */
+        .content-split {
+            display: flex;
+            flex: 1;
+            gap: 40px;
+            align-items: center;
+        }
+        .left-panel {
+            flex: 1;
+            font-size: 1.2rem;
+            line-height: 1.8;
+        }
+        .right-panel {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        canvas {
+            background: #fff;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            max-width: 100%;
+            height: auto;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        }
+        /* 标题和文字 */
+        h1 { color: var(--primary-color); font-size: 2.8rem; text-align: center; margin: 20px 0 10px 0;}
+        h2 { color: var(--primary-color); font-size: 2.2rem; margin-bottom: 20px; margin-top: 0;}
+        .subtitle { text-align: center; font-size: 1.5rem; color: #6b7280; margin-bottom: 30px;}
+        .bilingual { margin-bottom: 15px; }
+        .en { font-weight: bold; }
+        .zh { color: #4b5563; font-size: 0.95em; }
+        
+        /* 交互元素：基于CSS的步骤展示 */
+        .step-item {
+            opacity: 0;
+            transform: translateY(15px);
+            transition: all 0.4s ease;
+            pointer-events: none;
+            display: none;
+        }
+        .step-item.revealed {
+            opacity: 1;
+            transform: translateY(0);
+            pointer-events: auto;
+            display: block;
+        }
+        
+        /* 滑竿样式 */
+        .slider-container {
+            width: 100%;
+            text-align: center;
+            margin-top: 20px;
+            padding: 15px;
+            background: #f3f4f6;
+            border-radius: 8px;
+        }
+        input[type=range] { width: 80%; margin: 10px 0; }
+        
+        /* 底部导航 */
+        .nav-bar {
+            height: 70px;
+            background: #1f2937;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 30px;
+            flex-shrink: 0;
+        }
+        .nav-group { display: flex; gap: 15px; }
+        .nav-btn {
+            background: transparent; color: white; border: 2px solid white;
+            padding: 8px 20px; border-radius: 20px; font-size: 1rem;
+            cursor: pointer; transition: all 0.3s;
+        }
+        .nav-btn:hover:not(:disabled) { background: white; color: #1f2937; }
+        .nav-btn:disabled { border-color: #6b7280; color: #6b7280; cursor: not-allowed; opacity: 0.5;}
+        .step-btn { background: var(--primary-color); border-color: var(--primary-color); }
+        .step-btn:hover:not(:disabled) { background: #1a56cc; border-color: #1a56cc; color: white; }
+        .page-indicator { color: white; font-size: 1.2rem; font-weight: bold; }
+        .center-content { align-items: center; justify-content: flex-start; text-align: center; padding-top: 60px;}
+        .quote-box { background: #f3f4f6; border-left: 5px solid var(--secondary-color); padding: 20px; margin: 20px 0; border-radius: 0 8px 8px 0; font-style: italic; }
+    </style>
+</head>
+<body>
+
+<div class="slide-container">
+
+    <div class="slide active center-content">
+        <h1>Visualize Infinite Geometrical Series</h1>
+        <div class="subtitle zh">可视化无穷等比数列</div>
+        <h2 style="margin-top: 20px;">Tim Hu</h2>
+        <canvas id="canvas-cover" width="400" height="400" style="border:none; box-shadow:none; margin-top: 20px;"></canvas>
+    </div>
+
+    <div class="slide">
+        <h2>Introduction / 简介</h2>
+        <div class="content-split">
+            <div class="left-panel">
+                <div class="bilingual">
+                    <div class="en">Let's consider the sum of a geometric series:</div>
+                    <div class="zh">让我们考虑一个等比数列的求和：</div>
+                </div>
+                <div style="font-size: 1.5rem; margin: 20px 0;">
+                    $$ S_n = a + ar + ar^2 + ar^3 + \dots + ar^{n-1} $$
+                </div>
+                
+                <div class="step-item" style="font-size: 1.5rem; margin: 20px 0;">
+                    $$ S_n = \frac{a(1-r^n)}{1-r} $$
+                </div>
+                
+                <div class="step-item" style="margin-top: 20px;">
+                    <div class="bilingual">
+                        <div class="en">As \( n \to \infty \) (where \( |r| < 1 \)):</div>
+                        <div class="zh">当 \( n \to \infty \) 时（且 \( |r| < 1 \)）：</div>
+                    </div>
+                    <div style="font-size: 2rem; color: var(--primary-color); font-weight: bold; margin-top: 10px;">
+                        $$ S_{\infty} = \frac{a}{1-r} $$
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="slide center-content">
+        <h2 style="font-size: 2.5rem;">Learning Objective & Success Criteria</h2>
+        <h3 class="zh" style="font-size: 1.8rem; color: #6b7280; margin-top: -10px;">学习目标与成功标准</h3>
+        <div style="font-size: 1.6rem; margin-top: 40px; max-width: 85%; text-align: left;">
+            <div class="bilingual" style="margin-bottom: 20px;">
+                <div class="en" style="color: var(--primary-color); font-weight: bold;">Learning Objective / 学习目标:</div>
+            </div>
+            <div class="bilingual" style="line-height: 1.6; margin-bottom: 40px;">
+                <div class="en">Visualize infinite geometric series geometrically to understand their convergence and sums.</div>
+                <div class="zh" style="font-size: 0.9em; margin-top: 5px;">通过几何图形可视化无穷等比数列，从而直观地理解它们的收敛性和求和结果。</div>
+            </div>
+
+            <div class="bilingual" style="margin-bottom: 20px;">
+                <div class="en" style="color: var(--secondary-color); font-weight: bold;">Success Criteria / 成功标准:</div>
+            </div>
+            <ul style="line-height: 1.8;">
+                <li style="margin-bottom: 15px;">
+                    <div class="en">I can correctly identify the first term \( a \) and common ratio \( r \) from a visual geometric pattern.</div>
+                    <div class="zh" style="font-size: 0.85em; color: #4b5563;">我能从几何图案中正确识别出无穷等比数列的首项 \( a \) 和公比 \( r \)。</div>
+                </li>
+                <li>
+                    <div class="en">I can apply the formula \( S_\infty = \frac{a}{1-r} \) to find the total area or length.</div>
+                    <div class="zh" style="font-size: 0.85em; color: #4b5563;">我能运用公式 \( S_\infty = \frac{a}{1-r} \) 计算出图形的总面积或总长度。</div>
+                </li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="slide">
+        <h2>The Classic Half / 经典的二分之一</h2>
+        <div class="content-split">
+            <div class="left-panel">
+                <div style="font-size: 1.8rem; margin-bottom: 20px;">
+                    $$ \frac{1}{2} + \frac{1}{4} + \frac{1}{8} + \frac{1}{16} + \dots = \text{?} $$
+                </div>
+                <div class="step-item" style="font-size: 2rem; margin-top: 10px;">
+                    $$ = \frac{\frac{1}{2}}{1 - \frac{1}{2}} $$
+                </div>
+                <div class="step-item" style="font-size: 2.5rem; color: var(--primary-color); font-weight: bold; margin-top: 10px;">
+                    $$ = 1 $$
+                </div>
+                <div class="step-item bilingual" style="margin-top: 30px;">
+                    <div class="en">Divide a square in half, then divide the remaining half in half again...</div>
+                    <div class="zh">正方形分成一半，剩下的一半再分成一半，以此类推...</div>
+                </div>
+            </div>
+            <div class="right-panel">
+                <canvas id="canvas-s4" width="400" height="400"></canvas>
+                <div class="slider-container">
+                    <label>n = <span id="val-s4">1</span></label><br>
+                    <input type="range" id="slider-s4" min="1" max="8" value="1" oninput="updateSlide(4, this.value)">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="slide">
+        <h2>Visualizing Thirds / 三分之一的可视化</h2>
+        <div class="content-split">
+            <div class="left-panel">
+                <div style="font-size: 1.8rem; margin-bottom: 20px;">
+                    $$ \frac{1}{3} + \frac{1}{9} + \frac{1}{27} + \frac{1}{81} + \dots = \text{?} $$
+                </div>
+                <div class="step-item" style="font-size: 2rem; margin-top: 10px;">
+                    $$ = \frac{\frac{1}{3}}{1 - \frac{1}{3}} $$
+                </div>
+                <div class="step-item" style="font-size: 2.5rem; color: var(--primary-color); font-weight: bold; margin-top: 10px;">
+                    $$ = \frac{1}{2} $$
+                </div>
+                <div class="step-item bilingual" style="margin-top: 30px;">
+                    <div class="en">Notice how the orange area perfectly equals the blue area, filling the whole square eventually!</div>
+                    <div class="zh">注意观察：橙色面积与蓝色面积完全相等，最终填满整个正方形，因此每种颜色占一半 (1/2)！</div>
+                </div>
+            </div>
+            <div class="right-panel">
+                <canvas id="canvas-s5" width="400" height="400"></canvas>
+                <div class="slider-container">
+                    <label>n = <span id="val-s5">1</span></label><br>
+                    <input type="range" id="slider-s5" min="1" max="8" value="1" oninput="updateSlide(5, this.value)">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="slide">
+        <h2>Visualizing Quarters / 四分之一的可视化</h2>
+        <div class="content-split">
+            <div class="left-panel">
+                <div style="font-size: 1.8rem; margin-bottom: 20px;">
+                    $$ \frac{1}{4} + \frac{1}{16} + \frac{1}{64} + \frac{1}{256} + \dots = \text{?} $$
+                </div>
+                <div class="step-item" style="font-size: 2rem; margin-top: 10px;">
+                    $$ = \frac{\frac{1}{4}}{1 - \frac{1}{4}} $$
+                </div>
+                <div class="step-item" style="font-size: 2.5rem; color: var(--primary-color); font-weight: bold; margin-top: 10px;">
+                    $$ = \frac{1}{3} $$
+                </div>
+                <div class="step-item bilingual" style="margin-top: 30px;">
+                    <div class="en">Divide a square into 4, color 3 parts differently. Repeat for the empty part. Any single color covers exactly 1/3!</div>
+                    <div class="zh">正方形分成四份，涂其中三个1/4为三个不同颜色。对空白部分重复此操作。每种颜色精确占整体的1/3！</div>
+                </div>
+            </div>
+            <div class="right-panel">
+                <canvas id="canvas-s6" width="400" height="400"></canvas>
+                <div class="slider-container">
+                    <label>n = <span id="val-s6">1</span></label><br>
+                    <input type="range" id="slider-s6" min="1" max="8" value="1" oninput="updateSlide(6, this.value)">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="slide">
+        <h2>Pattern 1 / 规律 1</h2>
+        <div class="content-split">
+            <div class="left-panel">
+                <div class="bilingual">
+                    <div class="en">If the pattern goes into infinity, I wonder:</div>
+                    <div class="zh">如果这个图案无限延伸，我想知道：</div>
+                </div>
+                
+                <div class="step-item" style="font-weight: bold; color: var(--primary-color); font-size: 1.3rem; margin: 15px 0;">
+                    What is the ratio between the blue and orange area?<br>
+                    (蓝色和橙色面积的比例是多少？)
+                </div>
+                
+                <div class="step-item bilingual">
+                    <div class="en" style="color:var(--secondary-color);"><b>Solution 1: Infinite Geometric Series</b><br>Orange = 1/2 + 1/8 + ... = 2/3<br>Blue = 1/4 + 1/16 + ... = 1/3<br>Ratio is 1:2.</div>
+                    <div class="zh" style="color:var(--secondary-color);"><b>解法 1：无穷等比数列</b><br>利用公式求和可得比例为 1:2。</div>
+                </div>
+
+                <div class="step-item bilingual" style="margin-top: 20px;">
+                    <div class="en"><b>Solution 2: Self-similarity</b><br>Let square area = 1, orange area = y. The blue is a scaled down version (1/2 area) of orange.</div>
+                    <div class="zh"><b>解法 2：利用自相似性</b><br>设正方形面积为1，黄色(橙色)部分面积为y。蓝色部分面积为 y * 1/2。</div>
+                    <div style="font-size: 1.5rem; margin-top: 10px;">$$ y + \frac{1}{2}y = 1 \implies y = \frac{2}{3} $$</div>
+                </div>
+            </div>
+            <div class="right-panel">
+                <canvas id="canvas-s7" width="400" height="400"></canvas>
+                <div class="slider-container">
+                    <label>n = <span id="val-s7">1</span></label><br>
+                    <input type="range" id="slider-s7" min="1" max="8" value="1" oninput="updateSlide(7, this.value)">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="slide">
+        <h2>Pattern 2 / 规律 2</h2>
+        <div class="content-split">
+            <div class="left-panel">
+                <div class="bilingual">
+                    <div class="en">If the pattern goes into infinity, I wonder:</div>
+                    <div class="zh">如果这个图案无限延伸，我想知道：</div>
+                </div>
+                <div class="step-item" style="border: 2px dashed #ccc; padding: 20px; margin-top: 20px; border-radius: 8px;">
+                    <div class="bilingual">
+                        <div class="en" style="font-weight: bold; margin-bottom: 10px; color: var(--primary-color);">My reasoning:</div>
+                        <div class="zh" style="font-weight: bold; color: var(--primary-color);">我的推理：</div>
+                    </div>
+                </div>
+            </div>
+            <div class="right-panel">
+                <canvas id="canvas-s8" width="400" height="400"></canvas>
+                <div class="slider-container">
+                    <label>n = <span id="val-s8">1</span></label><br>
+                    <input type="range" id="slider-s8" min="1" max="8" value="1" oninput="updateSlide(8, this.value)">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="slide">
+        <h2>Pattern 3 / 规律 3</h2>
+        <div class="content-split">
+            <div class="left-panel">
+                <div class="bilingual">
+                    <div class="en">If the pattern goes into infinity, I wonder:</div>
+                    <div class="zh">如果这个图案无限延伸，我想知道：</div>
+                </div>
+                <div class="step-item" style="border: 2px dashed #ccc; padding: 20px; margin-top: 20px; border-radius: 8px;">
+                    <div class="bilingual">
+                        <div class="en" style="font-weight: bold; margin-bottom: 10px; color: var(--primary-color);">My reasoning:</div>
+                        <div class="zh" style="font-weight: bold; color: var(--primary-color);">我的推理：</div>
+                    </div>
+                </div>
+            </div>
+            <div class="right-panel">
+                <canvas id="canvas-s9" width="400" height="400"></canvas>
+                <div class="slider-container">
+                    <label>n = <span id="val-s9">1</span></label><br>
+                    <input type="range" id="slider-s9" min="1" max="8" value="1" oninput="updateSlide(9, this.value)">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="slide">
+        <h2>Pattern 4 / 规律 4</h2>
+        <div class="content-split">
+            <div class="left-panel">
+                <div class="bilingual">
+                    <div class="en">If the pattern goes into infinity, I wonder:</div>
+                    <div class="zh">如果这个图案无限延伸，我想知道：</div>
+                </div>
+                <div class="step-item" style="border: 2px dashed #ccc; padding: 20px; margin-top: 20px; border-radius: 8px;">
+                    <div class="bilingual">
+                        <div class="en" style="font-weight: bold; margin-bottom: 10px; color: var(--primary-color);">My reasoning:</div>
+                        <div class="zh" style="font-weight: bold; color: var(--primary-color);">我的推理：</div>
+                    </div>
+                </div>
+            </div>
+            <div class="right-panel">
+                <canvas id="canvas-s10" width="400" height="400"></canvas>
+                <div class="slider-container">
+                    <label>n = <span id="val-s10">1</span></label><br>
+                    <input type="range" id="slider-s10" min="1" max="8" value="1" oninput="updateSlide(10, this.value)">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="slide">
+        <h2>Pattern 5 / 规律 5</h2>
+        <div class="content-split">
+            <div class="left-panel">
+                <div class="bilingual">
+                    <div class="en">If the pattern goes into infinity, I wonder:</div>
+                    <div class="zh">如果这个图案无限延伸，我想知道：</div>
+                </div>
+                <div class="step-item" style="border: 2px dashed #ccc; padding: 20px; margin-top: 20px; border-radius: 8px;">
+                    <div class="bilingual">
+                        <div class="en" style="font-weight: bold; margin-bottom: 10px; color: var(--primary-color);">My reasoning:</div>
+                        <div class="zh" style="font-weight: bold; color: var(--primary-color);">我的推理：</div>
+                    </div>
+                </div>
+            </div>
+            <div class="right-panel">
+                <canvas id="canvas-s11" width="400" height="400"></canvas>
+                <div class="slider-container">
+                    <label>n = <span id="val-s11">1</span></label><br>
+                    <input type="range" id="slider-s11" min="1" max="8" value="1" oninput="updateSlide(11, this.value)">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="slide">
+        <h2>Pattern 6 / 规律 6</h2>
+        <div class="content-split">
+            <div class="left-panel">
+                <div class="bilingual">
+                    <div class="en">If the pattern goes into infinity, I wonder:</div>
+                    <div class="zh">如果这个图案无限延伸，我想知道：</div>
+                </div>
+                <div class="step-item" style="border: 2px dashed #ccc; padding: 20px; margin-top: 20px; border-radius: 8px;">
+                    <div class="bilingual">
+                        <div class="en" style="font-weight: bold; margin-bottom: 10px; color: var(--primary-color);">My reasoning:</div>
+                        <div class="zh" style="font-weight: bold; color: var(--primary-color);">我的推理：</div>
+                    </div>
+                </div>
+            </div>
+            <div class="right-panel">
+                <canvas id="canvas-s12" width="400" height="400"></canvas>
+                <div class="slider-container">
+                    <label>n = <span id="val-s12">1</span></label><br>
+                    <input type="range" id="slider-s12" min="1" max="8" value="1" oninput="updateSlide(12, this.value)">
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="slide">
+        <h2>Pattern 7 / 规律 7 (Koch Snowflake)</h2>
+        <div class="content-split">
+            <div class="left-panel">
+                <div class="bilingual">
+                    <div class="en">If the pattern goes into infinity, I wonder:</div>
+                    <div class="zh">如果这个图案无限延伸，我想知道：</div>
+                </div>
+                <div class="step-item" style="border: 2px dashed #ccc; padding: 20px; margin-top: 20px; border-radius: 8px;">
+                    <div class="bilingual">
+                        <div class="en" style="font-weight: bold; margin-bottom: 10px; color: var(--primary-color);">My reasoning:</div>
+                        <div class="zh" style="font-weight: bold; color: var(--primary-color);">我的推理：</div>
+                    </div>
+                </div>
+            </div>
+            <div class="right-panel">
+                <canvas id="canvas-s13" width="400" height="400"></canvas>
+                <div class="slider-container">
+                    <label>n = <span id="val-s13">1</span></label><br>
+                    <input type="range" id="slider-s13" min="1" max="8" value="1" oninput="updateSlide(13, this.value)">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="slide center-content">
+        <h2>What makes Mathematics "Interesting"?</h2>
+        <h3 class="zh">我们说一个数学命题“有趣”时，这意味着什么？</h3>
+        
+        <div style="width: 85%; text-align: left; margin-top: 30px;">
+            <div class="quote-box" style="margin-bottom: 30px;">
+                <div class="en" style="font-size: 1.3rem; font-weight: bold; margin-bottom: 8px;">"Interesting math is often counter-intuitive, surprising us and elegantly connecting seemingly unrelated concepts."</div>
+                <div class="zh" style="color: #4b5563; font-size: 1.1rem;">“有趣的数学往往是反直觉的，它让我们感到惊讶，并将看似毫无关联的概念优雅地联系在一起。”</div>
+            </div>
+            
+            <div style="display: flex; justify-content: center; width: 100%;">
+                <iframe src="https://player.bilibili.com/player.html?isOutside=true&aid=114212508534315&bvid=BV1GAoBYyEYZ&cid=29034283795&p=1" 
+                        scrolling="no" border="0" frameborder="no" framespacing="0" allowfullscreen="true" 
+                        style="width: 80%; height: 400px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.1);">
+                </iframe>
+            </div>
+        </div>
+    </div>
+
+    <div class="slide">
+        <h2>The Leibniz Series / 莱布尼兹级数的证明</h2>
+        <div class="content-split" style="align-items: flex-start;">
+            <div class="left-panel" style="font-size: 1.1rem;">
+                <div class="step-item">
+                    $$ \frac{1}{1-x} = 1 + x + x^2 + x^3 + x^4 + \dots \quad (|x|<1) $$
+                </div>
+
+                <div class="step-item">
+                    <div class="bilingual"><div class="zh">代入 -x：</div></div>
+                    $$ \frac{1}{1+x} = 1 - x + x^2 - x^3 + x^4 - \dots $$
+                </div>
+
+                <div class="step-item">
+                    <div class="bilingual"><div class="zh">代入 x²：</div></div>
+                    $$ \frac{1}{1+x^2} = 1 - x^2 + x^4 - x^6 + x^8 - \dots $$
+                </div>
+
+                <div class="step-item">
+                    <div class="bilingual"><div class="zh">两边同时求积分：</div></div>
+                    $$ \int \frac{1}{1+x^2} dx = \int (1 - x^2 + x^4 - x^6 + \dots) dx $$
+                </div>
+
+                <div class="step-item">
+                    $$ \arctan(x) = x - \frac{x^3}{3} + \frac{x^5}{5} - \frac{x^7}{7} + \dots $$
+                </div>
+
+                <div class="step-item" style="color: var(--primary-color); font-weight: bold; margin-top: 15px;">
+                    <div class="bilingual"><div class="zh">代入 x = 1：</div></div>
+                    $$ \frac{\pi}{4} = 1 - \frac{1}{3} + \frac{1}{5} - \frac{1}{7} + \dots $$
+                </div>
+            </div>
+            <div class="right-panel" style="justify-content: flex-start;">
+                <div class="bilingual" style="margin-bottom: 10px;">
+                    <div class="en">Let's watch a beautiful visualization:</div>
+                    <div class="zh">让我们看一个绝美的可视化视频：</div>
+                </div>
+                <iframe src="https://player.bilibili.com/player.html?isOutside=true&aid=1501717870&bvid=BV1pD421E7Vy&cid=1468852817&p=1&high_quality=1" 
+                        scrolling="no" border="0" frameborder="no" framespacing="0" allowfullscreen="true" 
+                        style="width: 100%; height: 350px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.1);">
+                </iframe>
+            </div>
+        </div>
+    </div>
+
+    <div class="nav-bar">
+        <div class="nav-group">
+            <button class="nav-btn" onclick="prevSlide()">&#9664; 上一页</button>
+            <button class="nav-btn step-btn" id="btn-prev-step" onclick="prevStep()">上一步</button>
+        </div>
+        <div class="page-indicator"><span id="current-page">1</span> / <span id="total-pages">15</span></div>
+        <div class="nav-group">
+            <button class="nav-btn step-btn" id="btn-next-step" onclick="nextStep()">下一步</button>
+            <button class="nav-btn" onclick="nextSlide()">下一页 &#9654;</button>
+        </div>
+    </div>
+
+</div>
+
+<script>
+    const colorOrange = '#F29F1A';
+    const colorBlue = '#2C73FF';
+    const colorRed = '#FF5733';
+    const colorGreen = '#33FF57';
+
+    // --- Navigation & Step Logic ---
+    let currentSlideIndex = 0;
+    let currentStepIndex = 0;
+    const slides = document.querySelectorAll('.slide');
+    document.getElementById('total-pages').innerText = slides.length;
+
+    function updateStepButtons() {
+        const activeSlide = document.querySelector('.slide.active');
+        const steps = activeSlide.querySelectorAll('.step-item');
+        const btnPrev = document.getElementById('btn-prev-step');
+        const btnNext = document.getElementById('btn-next-step');
+
+        if (steps.length === 0) {
+            btnPrev.style.display = 'none';
+            btnNext.style.display = 'none';
+        } else {
+            btnPrev.style.display = 'inline-block';
+            btnNext.style.display = 'inline-block';
+            btnPrev.disabled = (currentStepIndex === 0);
+            btnNext.disabled = (currentStepIndex >= steps.length);
+        }
+    }
+
+    function showSlide(index) {
+        const oldSteps = document.querySelectorAll('.slide.active .step-item');
+        oldSteps.forEach(el => el.classList.remove('revealed'));
+
+        slides.forEach((slide, i) => {
+            slide.classList.remove('active');
+            if(i === index) slide.classList.add('active');
+        });
+        document.getElementById('current-page').innerText = index + 1;
+        
+        currentStepIndex = 0;
+        updateStepButtons();
+        window.dispatchEvent(new Event('resize'));
+    }
+
+    function nextStep() {
+        const activeSlide = document.querySelector('.slide.active');
+        const steps = activeSlide.querySelectorAll('.step-item');
+        if (currentStepIndex < steps.length) {
+            steps[currentStepIndex].classList.add('revealed');
+            currentStepIndex++;
+        }
+        updateStepButtons();
+    }
+
+    function prevStep() {
+        const activeSlide = document.querySelector('.slide.active');
+        const steps = activeSlide.querySelectorAll('.step-item');
+        if (currentStepIndex > 0) {
+            currentStepIndex--;
+            steps[currentStepIndex].classList.remove('revealed');
+        }
+        updateStepButtons();
+    }
+
+    function nextSlide() {
+        if(currentSlideIndex < slides.length - 1) {
+            currentSlideIndex++;
+            showSlide(currentSlideIndex);
+        }
+    }
+
+    function prevSlide() {
+        if(currentSlideIndex > 0) {
+            currentSlideIndex--;
+            showSlide(currentSlideIndex);
+        }
+    }
+
+    document.addEventListener('keydown', (e) => {
+        if(e.key === 'ArrowRight') {
+            const steps = document.querySelectorAll('.slide.active .step-item');
+            if (currentStepIndex < steps.length) nextStep();
+            else nextSlide();
+        }
+        if(e.key === 'ArrowLeft') {
+            if (currentStepIndex > 0) prevStep();
+            else prevSlide();
+        }
+    });
+
+    // --- Helper to draw rects ---
+    function drawRect(ctx, x, y, w, h, fill) {
+        ctx.fillStyle = fill;
+        ctx.fillRect(x, y, w, h);
+        ctx.strokeStyle = '#000';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(x, y, w, h);
+    }
+
+    // --- Canvas Drawing Logic ---
+    function updateSlide(slideNum, val) {
+        document.getElementById('val-s' + slideNum).innerText = val;
+        drawPattern(slideNum, parseInt(val));
+    }
+
+    function drawPattern(slideNum, n) {
+        const canvas = document.getElementById('canvas-s' + slideNum);
+        if(!canvas) return;
+        const ctx = canvas.getContext('2d');
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        const w = canvas.width, h = canvas.height;
+
+        if (slideNum === 4) {
+            ctx.strokeRect(50, 50, 300, 300);
+            let cx = 50, cy = 50, cw = 300, ch = 300;
+            for(let i=0; i<n; i++) {
+                if(i%2 === 0) { drawRect(ctx, cx, cy, cw/2, ch, colorOrange); cx += cw/2; cw /= 2; } 
+                else { drawRect(ctx, cx, cy, cw, ch/2, colorOrange); cy += ch/2; ch /= 2; }
+            }
+        } 
+        else if (slideNum === 5) {
+            ctx.strokeRect(50, 50, 300, 300);
+            let cx = 50, cy = 50, cw = 300, ch = 300;
+            for(let i=0; i<n; i++) {
+                if(i%2 === 0) {
+                    drawRect(ctx, cx, cy, cw/3, ch, colorOrange); drawRect(ctx, cx+2*cw/3, cy, cw/3, ch, colorBlue);
+                    cx += cw/3; cw /= 3;
+                } else {
+                    drawRect(ctx, cx, cy, cw, ch/3, colorOrange); drawRect(ctx, cx, cy+2*ch/3, cw, ch/3, colorBlue);
+                    cy += ch/3; ch /= 3;
+                }
+            }
+        }
+        else if (slideNum === 6) {
+            ctx.strokeRect(50, 50, 300, 300);
+            let cx = 50, cy = 50, cw = 300, ch = 300;
+            for(let i=0; i<n; i++) {
+                let hw = cw/2, hh = ch/2;
+                drawRect(ctx, cx, cy, hw, hh, colorRed); drawRect(ctx, cx, cy+hh, hw, hh, colorGreen); drawRect(ctx, cx+hw, cy+hh, hw, hh, colorBlue);
+                cx += hw; cw = hw; ch = hh;
+            }
+        }
+        else if (slideNum === 7) {
+            ctx.save(); ctx.translate(w/2, h/2); let size = 150;
+            for(let i=0; i<n; i++) {
+                ctx.fillStyle = (i%2===0) ? colorOrange : colorBlue;
+                ctx.beginPath(); ctx.rect(-size, -size, size*2, size*2); ctx.fill(); ctx.stroke();
+                ctx.rotate(Math.PI/4); size /= Math.SQRT2;
+            }
+            ctx.restore();
+        }
+        else if (slideNum === 8) {
+            function drawTri(tx, ty, s, iter) {
+                if(iter === 0) return;
+                ctx.beginPath(); ctx.moveTo(tx, ty); ctx.lineTo(tx-s/2, ty+s*0.866); ctx.lineTo(tx+s/2, ty+s*0.866); ctx.closePath();
+                ctx.fillStyle = colorOrange; ctx.fill(); ctx.stroke();
+                if(iter > 1) {
+                    ctx.beginPath(); ctx.moveTo(tx-s/4, ty+s*0.433); ctx.lineTo(tx+s/4, ty+s*0.433); ctx.lineTo(tx, ty+s*0.866); ctx.closePath();
+                    ctx.fillStyle = 'white'; ctx.fill(); ctx.stroke();
+                    drawTri(tx, ty, s/2, iter-1);
+                }
+            }
+            drawTri(w/2, 50, 300, n);
+        }
+        else if (slideNum === 9) {
+            function drawCenterTri(cx, cy, s, iter, isUp) {
+                if(iter === 0) return;
+                let th = s * 0.866;
+                ctx.beginPath();
+                if(isUp) { ctx.moveTo(cx, cy - 2*th/3); ctx.lineTo(cx - s/2, cy + th/3); ctx.lineTo(cx + s/2, cy + th/3); } 
+                else { ctx.moveTo(cx, cy + 2*th/3); ctx.lineTo(cx - s/2, cy - th/3); ctx.lineTo(cx + s/2, cy - th/3); }
+                ctx.closePath();
+                ctx.fillStyle = isUp ? colorOrange : 'white'; ctx.fill(); ctx.stroke();
+                if(iter > 1) drawCenterTri(cx, cy, s/2, iter-1, !isUp);
+            }
+            let sInit = 320, hInit = sInit * 0.866;
+            drawCenterTri(w/2, (h - hInit)/2 + 2*hInit/3, sInit, n, true);
+        }
+        else if (slideNum === 10) {
+            ctx.strokeRect(50, 50, 300, 300);
+            function drawCornerSq(cx, cy, cw, iter) {
+                if(iter === 0) return; let half = cw/2;
+                drawRect(ctx, cx+half, cy, half, half, colorOrange);
+                if(iter > 1) { drawCornerSq(cx, cy, half, iter-1); drawCornerSq(cx+half, cy+half, half, iter-1); }
+            }
+            drawCornerSq(50, 50, 300, n);
+        }
+        else if (slideNum === 11) {
+            let r = 150, cx = w/2, cy = h/2;
+            for(let i=0; i<n; i++) {
+                if(i%2 === 0) { drawRect(ctx, cx-r, cy-r, r*2, r*2, colorOrange); } 
+                else { ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI*2); ctx.fillStyle = 'white'; ctx.fill(); ctx.stroke(); r /= Math.SQRT2; }
+            }
+        }
+        else if (slideNum === 12) {
+            // 完全匹配第一张截图中的对角线直角缺口分形逻辑
+            ctx.strokeRect(50, 50, 300, 300);
+            let S = 300 / 4; // 每个原始方块边长 75
+            
+            // 绘制最初位于对角线上的 4 个黄色方块 (n=1起步展示)
+            for(let i=0; i<4; i++) {
+                drawRect(ctx, 50 + i*S, 50 + i*S, S, S, colorOrange);
+            }
+            
+            // 递归在缺口处填充更小的正方形
+            function drawTopRightNotch(x, y, size, depth, maxDepth) {
+                if (depth > maxDepth) return;
+                let s = size / 2;
+                let fill = colorBlue; // 使用蓝色表示每次增加的新方块
+                drawRect(ctx, x, y - s, s, s, fill);
+                // 每次添加后产生两个新的外部直角缺口
+                drawTopRightNotch(x, y - s, s, depth + 1, maxDepth);
+                drawTopRightNotch(x + s, y, s, depth + 1, maxDepth);
+            }
+            
+            function drawBottomLeftNotch(x, y, size, depth, maxDepth) {
+                if (depth > maxDepth) return;
+                let s = size / 2;
+                let fill = colorBlue;
+                drawRect(ctx, x - s, y, s, s, fill);
+                drawBottomLeftNotch(x - s, y, s, depth + 1, maxDepth);
+                drawBottomLeftNotch(x, y + s, s, depth + 1, maxDepth);
+            }
+
+            // 对初始的 3 个连接点应用迭代缺口填充
+            for(let i=1; i<4; i++) {
+                let cx = 50 + i*S;
+                let cy = 50 + i*S;
+                drawTopRightNotch(cx, cy, S, 1, n - 1);
+                drawBottomLeftNotch(cx, cy, S, 1, n - 1);
+            }
+        }
+        else if (slideNum === 13) {
+            // 完全匹配第二张截图中的科赫雪花外轮廓与“内部挖去显示”逻辑
+            let cr = 130, ccx = 200, ccy = 230;
+            let p1 = {x: ccx, y: ccy - cr};
+            let p2 = {x: ccx + cr*Math.cos(Math.PI/6), y: ccy + cr*Math.sin(Math.PI/6)};
+            let p3 = {x: ccx - cr*Math.cos(Math.PI/6), y: ccy + cr*Math.sin(Math.PI/6)};
+
+            ctx.lineWidth = 1.5;
+
+            function drawKochLine(x1, y1, x2, y2, iter) {
+                if (iter === 0) {
+                    // 当递归到达底层，绘制最终确定的黑色边界
+                    ctx.beginPath();
+                    ctx.moveTo(x1, y1);
+                    ctx.lineTo(x2, y2);
+                    ctx.strokeStyle = '#1f2937';
+                    ctx.stroke();
+                } else {
+                    let dx = x2 - x1, dy = y2 - y1;
+                    let pA = {x: x1 + dx/3, y: y1 + dy/3};
+                    let pC = {x: x1 + 2*dx/3, y: y1 + 2*dy/3};
+                    let angle = -Math.PI/3; // 向外部突起
+                    let pB = {
+                        x: pA.x + (dx/3)*Math.cos(angle) - (dy/3)*Math.sin(angle),
+                        y: pA.y + (dx/3)*Math.sin(angle) + (dy/3)*Math.cos(angle)
+                    };
+
+                    // 只在最高一级绘制被“挖去”的中间段（即截图中用亮绿色表示的部分）
+                    if (iter === 1) {
+                        ctx.beginPath();
+                        ctx.moveTo(pA.x, pA.y);
+                        ctx.lineTo(pC.x, pC.y);
+                        ctx.strokeStyle = '#66ff66'; 
+                        ctx.stroke();
+                    }
+
+                    drawKochLine(x1, y1, pA.x, pA.y, iter-1);
+                    drawKochLine(pA.x, pA.y, pB.x, pB.y, iter-1);
+                    drawKochLine(pB.x, pB.y, pC.x, pC.y, iter-1);
+                    drawKochLine(pC.x, pC.y, x2, y2, iter-1);
+                }
+            }
+
+            // K_0 对应 n=1, iter=0
+            let iter = n - 1;
+            drawKochLine(p1.x, p1.y, p2.x, p2.y, iter);
+            drawKochLine(p2.x, p2.y, p3.x, p3.y, iter);
+            drawKochLine(p3.x, p3.y, p1.x, p1.y, iter);
+        }
+    }
+
+    window.onload = () => {
+        // 画出优美的封面装饰图
+        const ctxCover = document.getElementById('canvas-cover').getContext('2d');
+        ctxCover.translate(200, 200); let size = 130;
+        for(let i=0; i<6; i++) {
+            ctxCover.fillStyle = (i%2===0) ? colorOrange : colorBlue;
+            ctxCover.beginPath(); ctxCover.rect(-size, -size, size*2, size*2);
+            ctxCover.fill(); ctxCover.stroke();
+            ctxCover.rotate(Math.PI/4); size /= Math.SQRT2;
+        }
+
+        // 初始化所有互动画板
+        for(let i=4; i<=13; i++) drawPattern(i, 1);
+        
+        // 确保按钮逻辑正确初始化
+        updateStepButtons();
+    };
+</script>
+
+</body>
+</html>
