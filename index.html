@@ -943,48 +943,63 @@
         }
         else if (slideNum === 13) {
             let cr = 130, ccx = 200, ccy = 230;
+            // 初始等边三角形的三个顶点（顺时针方向）
             let p1 = {x: ccx, y: ccy - cr};
             let p2 = {x: ccx + cr*Math.cos(Math.PI/6), y: ccy + cr*Math.sin(Math.PI/6)};
             let p3 = {x: ccx - cr*Math.cos(Math.PI/6), y: ccy + cr*Math.sin(Math.PI/6)};
 
-            ctx.lineWidth = 1.5;
+            // 预计算旋转角度 (Canvas Y轴向下，顺时针多边形向外突出的旋转角为 -60 度)
+            const cosA = 0.5; // Math.cos(-Math.PI / 3)
+            const sinA = -0.8660254037844386; // Math.sin(-Math.PI / 3)
 
-            function drawKochLine(x1, y1, x2, y2, iter) {
-                if (iter === 0) {
-                    ctx.beginPath();
-                    ctx.moveTo(x1, y1);
-                    ctx.lineTo(x2, y2);
-                    ctx.strokeStyle = '#1f2937';
-                    ctx.stroke();
-                } else {
-                    let dx = x2 - x1, dy = y2 - y1;
-                    let pA = {x: x1 + dx/3, y: y1 + dy/3};
-                    let pC = {x: x1 + 2*dx/3, y: y1 + 2*dy/3};
-                    let angle = -Math.PI/3; 
+            // 递归获取所有多边形顶点
+            function getKochPoints(pts, iterations) {
+                if (iterations === 0) return pts;
+                let nextPoints =[];
+                for (let i = 0; i < pts.length; i++) {
+                    let curr = pts[i];
+                    let next = pts[(i + 1) % pts.length];
+                    
+                    let dx = next.x - curr.x;
+                    let dy = next.y - curr.y;
+                    
+                    let stepX = dx / 3;
+                    let stepY = dy / 3;
+                    
+                    // 线段的三等分点
+                    let pA = { x: curr.x + stepX, y: curr.y + stepY };
+                    let pC = { x: curr.x + 2 * stepX, y: curr.y + 2 * stepY };
+                    
+                    // 尖角顶点（向量旋转）
                     let pB = {
-                        x: pA.x + (dx/3)*Math.cos(angle) - (dy/3)*Math.sin(angle),
-                        y: pA.y + (dx/3)*Math.sin(angle) + (dy/3)*Math.cos(angle)
+                        x: pA.x + stepX * cosA - stepY * sinA,
+                        y: pA.y + stepX * sinA + stepY * cosA
                     };
-
-                    if (iter === 1) {
-                        ctx.beginPath();
-                        ctx.moveTo(pA.x, pA.y);
-                        ctx.lineTo(pC.x, pC.y);
-                        ctx.strokeStyle = '#66ff66'; 
-                        ctx.stroke();
-                    }
-
-                    drawKochLine(x1, y1, pA.x, pA.y, iter-1);
-                    drawKochLine(pA.x, pA.y, pB.x, pB.y, iter-1);
-                    drawKochLine(pB.x, pB.y, pC.x, pC.y, iter-1);
-                    drawKochLine(pC.x, pC.y, x2, y2, iter-1);
+                    
+                    nextPoints.push(curr, pA, pB, pC);
                 }
+                return getKochPoints(nextPoints, iterations - 1);
             }
 
             let iter = n - 1;
-            drawKochLine(p1.x, p1.y, p2.x, p2.y, iter);
-            drawKochLine(p2.x, p2.y, p3.x, p3.y, iter);
-            drawKochLine(p3.x, p3.y, p1.x, p1.y, iter);
+            let points = getKochPoints([p1, p2, p3], iter);
+
+            // 开始绘制闭合的多边形
+            ctx.beginPath();
+            ctx.moveTo(points[0].x, points[0].y);
+            for(let i = 1; i < points.length; i++) {
+                ctx.lineTo(points[i].x, points[i].y);
+            }
+            ctx.closePath();
+            
+            // 像前面的图案一样使用橙色填充
+            ctx.fillStyle = colorOrange; 
+            ctx.fill();
+            
+            // 加上深色描边，增加立体感与清晰度
+            ctx.lineWidth = 1;
+            ctx.strokeStyle = '#1f2937'; 
+            ctx.stroke();
         }
     }
 
