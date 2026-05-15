@@ -2,78 +2,76 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <!-- 优化视口配置，禁止缩放，适配移动设备 -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Visualize Infinite Geometrical Series</title>
+    <title>Sum to infinity and its visualization</title>
     <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
     <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
     <style>
+        /* 修复表格行动画错位的问题 */
+        tr.step-item.revealed {
+            display: table-row; 
+        }
         :root {
             --primary-color: #2C73FF;
             --secondary-color: #F29F1A;
             --bg-color: #f9fafb;
             --text-color: #1f2937;
-            --canvas-aspect-ratio: 1/1; /* 画布固定宽高比 */
+            --canvas-aspect-ratio: 1/1; 
         }
-        * {
-            box-sizing: border-box; /* 统一盒模型，避免尺寸溢出 */
-        }
+        * { box-sizing: border-box; }
         body {
             margin: 0;
-            padding: 0 0 70px 0; /* 底部留出 70px 安全区 */
+            padding: 0 0 70px 0; 
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background-color: #e5e7eb;
             display: flex;
             justify-content: center;
-            align-items: flex-start; /* 移动端改为顶部对齐，避免滚动截断 */
-            min-height: 100vh; /* 替换固定height，适配长内容 */
-            overflow-x: hidden; /* 只禁止横向滚动 */
-            padding: 10px 0; /* 移动端增加上下内边距 */
+            align-items: flex-start; 
+            min-height: 100vh; 
+            overflow-x: hidden; 
+            padding: 10px 0; 
         }
         .slide-container {
-            width: 98vw; /* 接近满屏，留少量边距 */
-            max-width: 1200px; /* 桌面端最大宽度，避免过宽 */
-            min-height: calc(100vh - 20px); /* 适配视口高度 */
+            width: 98vw; 
+            max-width: 1200px; 
+            min-height: calc(100vh - 20px); 
             background: white;
             border-radius: 12px;
             box-shadow: 0 10px 25px rgba(0,0,0,0.1);
             display: flex;
             flex-direction: column;
             overflow: hidden;
-            margin: 0 auto; /* 居中 */
+            margin: 0 auto; 
         }
         .slide {
             display: none;
             flex: 1;
-            padding: 20px 20px 160px 20px; /* 移动端减少内边距 */
+            padding: 20px 20px 160px 20px; 
             overflow-y: auto;
         }
         .slide.active {
             display: flex;
             flex-direction: column;
         }
-        /* 响应式分栏布局：移动端垂直排列，桌面端水平排列 */
         .content-split {
             display: flex;
             flex: 1;
-            gap: 20px; /* 减少固定gap，适配小屏 */
-            align-items: flex-start; /* 改为顶部对齐，避免内容错位 */
-            flex-direction: column; /* 默认垂直排列（移动端） */
+            gap: 20px; 
+            align-items: flex-start; 
+            flex-direction: column; 
         }
-        /* 桌面端分栏 */
         @media (min-width: 768px) {
             .content-split {
                 flex-direction: row;
                 align-items: center;
             }
-            .slide {
-                padding: 40px 60px 100px 60px;
-            }
+            .slide { padding: 40px 60px 100px 60px; }
         }
         .left-panel {
             flex: 1;
-            font-size: 1rem; /* 基础字号缩小，适配移动端 */
+            font-size: 1rem; 
             line-height: 1.8;
+            width: 100%;
         }
         .right-panel {
             flex: 1;
@@ -81,29 +79,27 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            width: 100%; /* 移动端占满宽度 */
+            width: 100%; 
         }
-        /* 画布容器：保证宽高比，自适应父容器 */
         .canvas-wrapper {
             width: 100%;
-            max-width: 400px; /* 最大宽度不超过400px */
-            aspect-ratio: var(--canvas-aspect-ratio); /* 保持1:1比例 */
+            max-width: 400px; 
+            aspect-ratio: var(--canvas-aspect-ratio); 
             margin: 0 auto;
         }
         canvas {
             background: #fff;
             border: 2px solid #ddd;
             border-radius: 8px;
-            width: 100% !important; /* 强制占满容器 */
-            height: 100% !important; /* 强制占满容器 */
+            width: 100% !important; 
+            height: 100% !important; 
             max-width: 100%;
             box-shadow: 0 4px 6px rgba(0,0,0,0.05);
-            object-fit: contain; /* 保持比例，不拉伸 */
+            object-fit: contain; 
         }
-        /* 标题和文字：响应式字号 */
         h1 { 
             color: var(--primary-color); 
-            font-size: clamp(1.8rem, 5vw, 2.8rem); /* 自适应字号：1.8rem ~ 2.8rem */
+            font-size: clamp(1.8rem, 5vw, 2.8rem); 
             text-align: center; 
             margin: 20px 0 10px 0;
         }
@@ -123,7 +119,6 @@
         .en { font-weight: bold; }
         .zh { color: #4b5563; font-size: 0.95em; }
         
-        /* 步骤展示样式不变 */
         .step-item {
             opacity: 0;
             transform: translateY(15px);
@@ -138,7 +133,6 @@
             display: block;
         }
         
-        /* 滑竿样式：适配触控 */
         .slider-container {
             width: 100%;
             text-align: center;
@@ -148,41 +142,38 @@
             border-radius: 8px;
         }
         input[type=range] { 
-            width: 90%; /* 移动端增加滑块宽度 */
+            width: 90%; 
             margin: 10px 0;
-            height: 8px; /* 增加触控面积 */
+            height: 8px; 
             cursor: pointer;
         }
-        /* 增大滑块拇指，适配触控 */
         input[type=range]::-webkit-slider-thumb {
             width: 20px;
             height: 20px;
         }
         
-        /* 底部导航：响应式适配 */
         .nav-bar {
-  position: fixed;
-  left: 50%;          /* 改为居中对齐 */
-  transform: translateX(-50%);
-  bottom: 0;
-  z-index: 9999;
-  width: 98vw;        /* 和 .slide-container 保持一致 */
-  max-width: 1200px;  /* 和 .slide-container 最大宽度一致 */
-  min-height: 70px;
-  background: #1f2937;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 10px 15px;
-  flex-shrink: 0;
-  flex-wrap: wrap;
-  gap: 10px;
-  border-radius: 0 0 12px 12px; /* 和主容器圆角保持一致 */
-}
-
+            position: fixed;
+            left: 50%;          
+            transform: translateX(-50%);
+            bottom: 0;
+            z-index: 9999;
+            width: 98vw;        
+            max-width: 1200px;  
+            min-height: 70px;
+            background: #1f2937;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 15px;
+            flex-shrink: 0;
+            flex-wrap: wrap;
+            gap: 10px;
+            border-radius: 0 0 12px 12px; 
+        }
         .nav-group { 
             display: flex; 
-            gap: 10px; /* 移动端减少按钮间距 */
+            gap: 10px; 
             flex-wrap: wrap;
             justify-content: center;
         }
@@ -190,12 +181,12 @@
             background: transparent; 
             color: white; 
             border: 2px solid white;
-            padding: 8px 15px; /* 适配触控的按钮大小 */
+            padding: 8px 15px; 
             border-radius: 20px; 
-            font-size: clamp(0.8rem, 2vw, 1rem); /* 自适应字号 */
+            font-size: clamp(0.8rem, 2vw, 1rem); 
             cursor: pointer; 
             transition: all 0.3s;
-            min-width: 80px; /* 按钮最小宽度，避免过窄 */
+            min-width: 80px; 
         }
         .nav-btn:hover:not(:disabled) { 
             background: white; 
@@ -226,97 +217,130 @@
             align-items: center; 
             justify-content: flex-start; 
             text-align: center; 
-            padding-top: 20px; /* 移动端减少顶部内边距 */
+            padding-top: 20px; 
         }
         .quote-box { 
             background: #f3f4f6; 
             border-left: 5px solid var(--secondary-color); 
-            padding: 15px; /* 移动端减少内边距 */
+            padding: 15px; 
             margin: 20px 0; 
             border-radius: 0 8px 8px 0; 
             font-style: italic; 
         }
 
-        /* 媒体查询：手机端（小屏）优化 */
         @media (max-width: 480px) {
-            .nav-bar {
-                flex-direction: column; /* 导航栏垂直排列 */
-                padding: 15px;
-            }
-            .nav-group {
-                width: 100%;
-                justify-content: space-around;
-            }
-            .quote-box {
-                padding: 10px;
-            }
-            .content-split {
-                gap: 10px;
-            }
+            .nav-bar { flex-direction: column; padding: 15px; }
+            .nav-group { width: 100%; justify-content: space-around; }
+            .quote-box { padding: 10px; }
+            .content-split { gap: 10px; }
         }
-
-        /* 媒体查询：平板端优化 */
         @media (min-width: 481px) and (max-width: 767px) {
-            .canvas-wrapper {
-                max-width: 350px; /* 平板画布稍小 */
-            }
-            .nav-btn {
-                padding: 8px 18px;
-            }
+            .canvas-wrapper { max-width: 350px; }
+            .nav-btn { padding: 8px 18px; }
         }
 
-        /* iframe 响应式：视频适配 */
         iframe {
             width: 100% !important;
             height: auto !important;
-            aspect-ratio: 16/9; /* 保持视频16:9比例 */
-            max-height: 400px;
+            aspect-ratio: 16/9; 
+            max-height: 500px;
         }
+        
+        /* 表格样式增强 */
+        .math-table th, .math-table td {
+            padding: 8px 5px;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        .math-table th { background-color: #f9fafb; font-weight: bold; color: #374151; }
     </style>
 </head>
 <body>
 
 <div class="slide-container">
 
+    <!-- Slide 1: 封面重构 -->
     <div class="slide active center-content">
-        <h1>Visualize Infinite Geometrical Series</h1>
-        <div class="subtitle zh">可视化无穷等比数列</div>
-        <h2 style="margin-top: 20px;">Tim Hu</h2>
-        <!-- 给画布包裹自适应容器 -->
+        <h1 style="font-size: clamp(2.2rem, 5vw, 3.5rem); margin-bottom: 5px;">Sum to infinity and its visualization</h1>
+        <div class="subtitle zh" style="font-size: clamp(1.2rem, 3vw, 1.8rem); margin-top: 5px;">无穷等比数列与可视化</div>
+        
+        <h2 style="margin-top: 15px; margin-bottom: 5px; font-size: clamp(1.5rem, 3vw, 2rem); color: #374151;">Tim Hu</h2>
+        <div id="presentation-date" style="color: #6b7280; font-size: clamp(1rem, 2vw, 1.2rem); margin-bottom: 20px; font-style: italic;"></div>
+        
+        <!-- 画布封面 -->
         <div class="canvas-wrapper">
-            <canvas id="canvas-cover" width="400" height="400" style="border:none; box-shadow:none; margin-top: 20px;"></canvas>
+            <canvas id="canvas-cover" width="400" height="400" style="border:none; box-shadow:none; margin-top: 10px;"></canvas>
         </div>
+        
+        <script>
+            // 自动填充当天日期
+            const dateOptions = { year: 'numeric', month: 'long', day: 'numeric' };
+            document.getElementById('presentation-date').innerText = new Date().toLocaleDateString('en-US', dateOptions);
+        </script>
     </div>
 
-    <div class="slide">
-        <h2>Introduction / 简介</h2>
-        <div class="content-split">
-            <div class="left-panel">
-                <div class="bilingual">
-                    <div class="en">Let's consider the sum of a geometric series:</div>
-                    <div class="zh">让我们考虑一个等比数列的求和：</div>
-                </div>
-                <div style="font-size: clamp(1rem, 3vw, 1.5rem); margin: 20px 0;">
-                    $$ S_n = a + ar + ar^2 + ar^3 + \dots + ar^{n-1} $$
-                </div>
-                
-                <div class="step-item" style="font-size: clamp(1rem, 3vw, 1.5rem); margin: 20px 0;">
-                    $$ S_n = \frac{a(1-r^n)}{1-r} $$
-                </div>
-                
-                <div class="step-item" style="margin-top: 20px;">
-                    <div class="bilingual">
-                        <div class="en">As \( n \to \infty \) (where \( |r| < 1 \)):</div>
-                        <div class="zh">当 \( n \to \infty \) 时（且 \( |r| < 1 \)）：</div>
-                    </div>
-                    <div style="font-size: clamp(1.2rem, 4vw, 2rem); color: var(--primary-color); font-weight: bold; margin-top: 10px;">
-                        $$ S_{\infty} = \frac{a}{1-r} $$
-                    </div>
-                </div>
+    <!-- Slide 2: 自我介绍 -->
+    <div class="slide center-content">
+        <h1 style="font-size: clamp(2.5rem, 6vw, 4rem); margin-bottom: 0;">Tim Hu</h1>
+        <div class="subtitle zh" style="font-size: clamp(1.2rem, 3vw, 1.8rem); margin-top: 5px;">Let's explore the beauty of Mathematics</div>
+        
+        <div class="profile-container" style="display: flex; flex-direction: row; align-items: center; justify-content: center; gap: 40px; margin-top: 30px; flex-wrap: wrap;">
+            <!-- 请确保照片文件名为 tim_photo.jpg 并在同一目录下 -->
+            <img src="tim_photo.jpg" alt="Tim Hu Portrait" style="width: 250px; height: auto; border-radius: 12px; box-shadow: 0 8px 16px rgba(0,0,0,0.2); object-fit: cover;">
+            
+            <div style="text-align: left; font-size: clamp(1.1rem, 2.5vw, 1.4rem); line-height: 2.2; color: #374151;">
+                <ul style="list-style-type: none; padding-left: 0; margin: 0;">
+                    <li>🎓 <b>Head of Math</b></li>
+                    <li>📝 <b>A-level数学官方阅卷官</b></li>
+                    <li>🏅 <b>广州市花都区优秀教师</b></li>
+                    <li>⏳ <b>13年国际数学课程教学经验</b></li>
+                    <li>🏆 <b>数学竞赛教练</b></li>
+                    <li>💻 <b>Mathematica极客</b></li>
+                </ul>
             </div>
         </div>
     </div>
 
+    <!-- Slide 3: 芝诺悖论视频 (修复链接) -->
+    <div class="slide center-content">
+        <h2>Zeno's Paradox / 芝诺悖论</h2>
+        <div class="subtitle zh">Achilles and the Tortoise 阿基里斯与乌龟</div>
+        <div style="width: 90%; max-width: 900px; margin-top: 20px;">
+            <!-- 修复：将 // 改为了 https:// -->
+            <iframe src="https://player.bilibili.com/player.html?isOutside=true&aid=234340845&bvid=BV1j8411y7gC&cid=1289911317&p=1" scrolling="no" border="0" frameborder="no" framespacing="0" allowfullscreen="true" style="border-radius: 12px; box-shadow: 0 8px 20px rgba(0,0,0,0.15);"></iframe>
+        </div>
+    </div>
+
+    <!-- Slide 4: 阿基里斯与乌龟题目 -->
+    <div class="slide">
+        <h2>Mathematical Analysis / 数学分析</h2>
+        <div class="content-split">
+            <div class="left-panel">
+                <div style="font-size: clamp(1.1rem, 3vw, 1.3rem); background: #f3f4f6; padding: 20px; border-left: 6px solid var(--primary-color); border-radius: 0 8px 8px 0; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 20px;">
+                    <b>Exercise 2:</b> Assume the speed of Achilles and tortoise are 1 m/s and 0.1 m/s respectively. Achilles is 1000 m behind the tortoise and both of them running forward at the same time. How much time does Achilles need to catch the tortoise?<br><br>
+                    <i style="color: #6b7280;">(Try to analyze the problem with an infinite series.)</i>
+                </div>
+                
+                <div class="step-item" style="font-size: clamp(1.2rem, 3vw, 1.5rem); margin-top: 20px;">
+                    <span style="color: var(--secondary-color); font-weight: bold;">Achilles' Distance Sequence:</span><br>
+                    $$ D = 1000 + 100 + 10 + 1 + 0.1 + \dots $$
+                </div>
+                
+                <div class="step-item" style="font-size: clamp(1.2rem, 3vw, 1.5rem); margin-top: 20px;">
+                    <span style="color: var(--primary-color); font-weight: bold;">Time Needed (T = D / Speed):</span><br>
+                    $$ T = \frac{1000 + 100 + 10 + 1 + 0.1 + \dots}{1} \text{ (seconds)} $$
+                </div>
+                
+                <div class="step-item" style="font-size: clamp(1.2rem, 3vw, 1.5rem); margin-top: 20px; text-align: center; font-weight: bold;">
+                    But how to calculate infinite sums? 🤯
+                </div>
+            </div>
+            <div class="right-panel" style="justify-content: flex-start; padding-top: 20px;">
+                <img src="achilles_diagram.png" alt="Achilles and Tortoise Diagram" style="width: 100%; max-width: 500px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.1);">
+            </div>
+        </div>
+    </div>
+
+    <!-- Slide 5: 学习目标与成功标准 (重排位置) -->
     <div class="slide center-content">
         <h2 style="font-size: clamp(1.8rem, 4vw, 2.5rem);">Learning Objective & Success Criteria</h2>
         <h3 class="zh" style="font-size: clamp(1.2rem, 3vw, 1.8rem); color: #6b7280; margin-top: -10px;">学习目标与成功标准</h3>
@@ -345,6 +369,42 @@
         </div>
     </div>
 
+    <!-- Slide 6: 无穷等比数列求和公式 -->
+    <div class="slide">
+        <h2>Infinite Geometric Series / 无穷等比数列</h2>
+        <div class="content-split">
+            <div class="left-panel">
+                <div class="bilingual">
+                    <div class="en">Let's consider the sum of a geometric series:</div>
+                    <div class="zh">让我们考虑一个等比数列的求和：</div>
+                </div>
+                <div style="font-size: clamp(1rem, 3vw, 1.5rem); margin: 20px 0;">
+                    $$ S_n = a + ar + ar^2 + ar^3 + \dots + ar^{n-1} $$
+                </div>
+                
+                <div class="step-item" style="font-size: clamp(1rem, 3vw, 1.5rem); margin: 20px 0;">
+                    $$ S_n = \frac{a(1-r^n)}{1-r} $$
+                </div>
+                
+                <div class="step-item" style="margin-top: 20px;">
+                    <div class="bilingual">
+                        <div class="en">As \( n \to \infty \) (where \( |r| < 1 \)):</div>
+                        <div class="zh">当 \( n \to \infty \) 时（且 \( |r| < 1 \)）：</div>
+                    </div>
+                    <div style="font-size: clamp(1.2rem, 4vw, 2rem); color: var(--primary-color); font-weight: bold; margin-top: 10px; background: #eff6ff; padding: 15px; border-radius: 8px; text-align: center;">
+                        $$ S_{\infty} = \frac{a}{1-r} $$
+                    </div>
+                </div>
+                
+                <div class="step-item" style="margin-top: 30px; border-left: 4px solid var(--secondary-color); padding-left: 15px;">
+                    <div class="en">Back to Achilles: \( a = 1000, r = 0.1 \)</div>
+                    <div style="font-size: 1.2rem; margin-top: 5px;">$$ T = \frac{1000}{1 - 0.1} = \frac{10000}{9} \approx 1111.11 \text{ s} $$</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Slide 7: 经典的二分之一 -->
     <div class="slide">
         <h2>The Classic Half / 经典的二分之一</h2>
         <div class="content-split">
@@ -375,6 +435,7 @@
         </div>
     </div>
 
+    <!-- Slide 8: 三分之一 -->
     <div class="slide">
         <h2>Visualizing Thirds / 三分之一的可视化</h2>
         <div class="content-split">
@@ -405,6 +466,7 @@
         </div>
     </div>
 
+    <!-- Slide 9: 四分之一 -->
     <div class="slide">
         <h2>Visualizing Quarters / 四分之一的可视化</h2>
         <div class="content-split">
@@ -435,6 +497,7 @@
         </div>
     </div>
 
+    <!-- Slide 10: 规律 1 -->
     <div class="slide">
         <h2>Pattern 1 / 规律 1</h2>
         <div class="content-split">
@@ -472,6 +535,7 @@
         </div>
     </div>
 
+    <!-- Slide 11: 规律 2 -->
     <div class="slide">
         <h2>Pattern 2 / 规律 2</h2>
         <div class="content-split">
@@ -499,6 +563,7 @@
         </div>
     </div>
 
+    <!-- Slide 12: 规律 3 -->
     <div class="slide">
         <h2>Pattern 3 / 规律 3</h2>
         <div class="content-split">
@@ -526,6 +591,7 @@
         </div>
     </div>
 
+    <!-- Slide 13: 规律 4 -->
     <div class="slide">
         <h2>Pattern 4 / 规律 4</h2>
         <div class="content-split">
@@ -553,6 +619,7 @@
         </div>
     </div>
 
+    <!-- Slide 14: 规律 5 -->
     <div class="slide">
         <h2>Pattern 5 / 规律 5</h2>
         <div class="content-split">
@@ -580,6 +647,7 @@
         </div>
     </div>
 
+    <!-- Slide 15: 规律 6 -->
     <div class="slide">
         <h2>Pattern 6 / 规律 6</h2>
         <div class="content-split">
@@ -607,19 +675,49 @@
         </div>
     </div>
     
+    <!-- Slide 16: 规律 7 (科赫雪花) + 完整推导过程 -->
     <div class="slide">
         <h2>Pattern 7 / 规律 7 (Koch Snowflake)</h2>
         <div class="content-split">
-            <div class="left-panel">
-                <div class="bilingual">
-                    <div class="en">If the pattern goes into infinity, I think:</div>
-                    <div class="zh">如果这个图案无限延伸，我认为：</div>
+            <div class="left-panel" style="font-size: 0.95rem;">
+                <div class="bilingual" style="margin-bottom: 10px;">
+                    <div class="en">Let initial triangle area be 1. How does the area grow?</div>
+                    <div class="zh">假设初始三角形面积为 1。总面积如何增长？</div>
                 </div>
-                <div class="step-item" style="border: 2px dashed #ccc; padding: 20px; margin-top: 20px; border-radius: 8px;">
-                    <div class="bilingual">
-                        <div class="en" style="font-weight: bold; margin-bottom: 10px; color: var(--primary-color);">My reasoning:</div>
-                        <div class="zh" style="font-weight: bold; color: var(--primary-color);">我的推理：</div>
-                    </div>
+                
+                <table class="math-table" style="width: 100%; border-collapse: collapse; text-align: center; margin-bottom: 15px;">
+                    <tr>
+                        <th>Step (n)</th>
+                        <th>New Triangles</th>
+                        <th>Area of Each</th>
+                        <th>Added Area</th>
+                    </tr>
+                    <tr class="step-item">
+                        <td>0</td><td>1 (Initial)</td><td>1</td><td>1</td>
+                    </tr>
+                    <tr class="step-item">
+                        <td>1</td><td>3</td><td>\(\frac{1}{9}\)</td><td>\(\frac{3}{9} = \frac{1}{3}\)</td>
+                    </tr>
+                    <tr class="step-item">
+                        <td>2</td><td>\(3 \times 4 = 12\)</td><td>\(\frac{1}{81}\)</td><td>\(\frac{12}{81} = \frac{4}{27}\)</td>
+                    </tr>
+                    <tr class="step-item">
+                        <td>3</td><td>\(12 \times 4 = 48\)</td><td>\(\frac{1}{729}\)</td><td>\(\frac{48}{729} = \frac{16}{243}\)</td>
+                    </tr>
+                    <tr class="step-item" style="background-color: #eff6ff;">
+                        <td>n</td><td>\(3 \times 4^{n-1}\)</td><td>\(\left(\frac{1}{9}\right)^n\)</td><td>\(\frac{1}{3} \left(\frac{4}{9}\right)^{n-1}\)</td>
+                    </tr>
+                </table>
+
+                <div class="step-item" style="font-size: 1.1rem;">
+                    <span style="color: var(--primary-color); font-weight: bold;">Total Area:</span>
+                    $$ S = 1 + \frac{1}{3} + \frac{4}{27} + \frac{16}{243} + \dots $$
+                </div>
+                <div class="step-item" style="font-size: 1.1rem; margin-top: 10px;">
+                    $$ S = 1 + \frac{1/3}{1 - 4/9} = 1 + \frac{1/3}{5/9} = 1 + \frac{3}{5} $$
+                </div>
+                <div class="step-item" style="font-size: 1.5rem; color: var(--secondary-color); font-weight: bold; margin-top: 10px; text-align: center;">
+                    $$ S = \frac{8}{5} = 1.6 $$
                 </div>
             </div>
             <div class="right-panel">
@@ -634,6 +732,7 @@
         </div>
     </div>
 
+    <!-- Slide 17: What makes Math Interesting -->
     <div class="slide center-content">
         <h2>What makes Mathematics "Interesting"?</h2>
         <h3 class="zh">我们说一个数学命题“有趣”时，这意味着什么？</h3>
@@ -653,6 +752,7 @@
         </div>
     </div>
 
+    <!-- Slide 18: 莱布尼兹级数 -->
     <div class="slide">
         <h2>The Leibniz Series / 莱布尼兹级数的证明</h2>
         <div class="content-split" style="align-items: flex-start;">
@@ -698,12 +798,45 @@
         </div>
     </div>
 
+    <!-- Slide 19: 感谢页 (已修复横向排列与UI统一) -->
+    <div class="slide center-content">
+        <h1 style="font-size: clamp(2.5rem, 6vw, 4rem); margin-top: 20px; margin-bottom: 10px;">Thank You!</h1>
+        <div class="subtitle zh" style="font-size: clamp(1.5rem, 4vw, 2rem);">感谢各位聆听与参与</div>
+        
+        <div style="font-size: clamp(1.2rem, 3vw, 1.5rem); margin: 20px 0;">
+            ✉️ Email: <a href="mailto:tim.hu@fettes.cn" style="color: var(--primary-color); text-decoration: none;">tim.hu@fettes.cn</a>
+        </div>
+
+        <!-- 这里是负责“横向排列”的控制容器，确保它没被删掉 -->
+        <div style="display: flex; flex-direction: row; justify-content: center; align-items: center; gap: 40px; flex-wrap: wrap; margin-top: 20px; width: 100%;">
+            
+            <!-- 1. 本节课件专属二维码（带白色卡片底座） -->
+            <div style="background: #ffffff; border-radius: 16px; width: 220px; padding: 20px 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.08); text-align: center; box-sizing: border-box; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+                <img src="https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=https://timhu916.github.io/visualizeGeometricSeries/" alt="Courseware QR" style="width: 170px; height: 170px; border-radius: 4px;">
+                <p style="margin-top: 15px; margin-bottom: 5px; font-weight: bold; color: #1f2937; font-size: 1.1rem;">本节课件</p>
+                <p style="margin: 0; font-size: 0.85rem; color: #6b7280;">扫码获取在线版本</p>
+            </div>
+            
+            <!-- 2. 微信公众号二维码 -->
+            <div style="text-align: center;">
+                <img src="wechat_qr.jpg" alt="WeChat Official Account QR" style="width: 220px; height: auto; border-radius: 16px; box-shadow: 0 4px 10px rgba(0,0,0,0.15);">
+            </div>
+            
+            <!-- 3. 小红书二维码 -->
+            <div style="text-align: center;">
+                <img src="xiaohongshu_qr.jpg" alt="Xiaohongshu QR" style="width: 220px; height: auto; border-radius: 16px; box-shadow: 0 4px 10px rgba(0,0,0,0.15);">
+            </div>
+
+        </div>
+    </div>
+
+    <!-- 底部导航 -->
     <div class="nav-bar">
         <div class="nav-group">
             <button class="nav-btn" onclick="prevSlide()">&#9664; 上一页</button>
             <button class="nav-btn step-btn" id="btn-prev-step" onclick="prevStep()">上一步</button>
         </div>
-        <div class="page-indicator"><span id="current-page">1</span> / <span id="total-pages">15</span></div>
+        <div class="page-indicator"><span id="current-page">1</span> / <span id="total-pages">19</span></div>
         <div class="nav-group">
             <button class="nav-btn step-btn" id="btn-next-step" onclick="nextStep()">下一步</button>
             <button class="nav-btn" onclick="nextSlide()">下一页 &#9654;</button>
@@ -718,7 +851,7 @@
     const colorRed = '#FF5733';
     const colorGreen = '#33FF57';
 
-    // --- Navigation & Step Logic ---
+    // Navigation & Step Logic
     let currentSlideIndex = 0;
     let currentStepIndex = 0;
     const slides = document.querySelectorAll('.slide');
@@ -802,9 +935,7 @@
         }
     });
 
-
-
-    // --- Helper to draw rects ---
+    // Helper to draw rects
     function drawRect(ctx, x, y, w, h, fill) {
         ctx.fillStyle = fill;
         ctx.fillRect(x, y, w, h);
@@ -813,7 +944,7 @@
         ctx.strokeRect(x, y, w, h);
     }
 
-    // --- Canvas Drawing Logic ---
+    // Canvas Drawing Logic
     function updateSlide(slideNum, val) {
         document.getElementById('val-s' + slideNum).innerText = val;
         drawPattern(slideNum, parseInt(val));
@@ -824,9 +955,7 @@
         if(!canvas) return;
         const ctx = canvas.getContext('2d');
         ctx.clearRect(0, 0, canvas.width, canvas.height);
-        // 适配画布缩放：重置变换矩阵
         ctx.setTransform(1, 0, 0, 1, 0, 0);
-        
         
         const w = canvas.width, h = canvas.height;
 
@@ -943,16 +1072,13 @@
         }
         else if (slideNum === 13) {
             let cr = 130, ccx = 200, ccy = 230;
-            // 初始等边三角形的三个顶点（顺时针方向）
             let p1 = {x: ccx, y: ccy - cr};
             let p2 = {x: ccx + cr*Math.cos(Math.PI/6), y: ccy + cr*Math.sin(Math.PI/6)};
             let p3 = {x: ccx - cr*Math.cos(Math.PI/6), y: ccy + cr*Math.sin(Math.PI/6)};
 
-            // 预计算旋转角度 (Canvas Y轴向下，顺时针多边形向外突出的旋转角为 -60 度)
-            const cosA = 0.5; // Math.cos(-Math.PI / 3)
-            const sinA = -0.8660254037844386; // Math.sin(-Math.PI / 3)
+            const cosA = 0.5; 
+            const sinA = -0.8660254037844386; 
 
-            // 递归获取所有多边形顶点
             function getKochPoints(pts, iterations) {
                 if (iterations === 0) return pts;
                 let nextPoints =[];
@@ -966,11 +1092,9 @@
                     let stepX = dx / 3;
                     let stepY = dy / 3;
                     
-                    // 线段的三等分点
                     let pA = { x: curr.x + stepX, y: curr.y + stepY };
                     let pC = { x: curr.x + 2 * stepX, y: curr.y + 2 * stepY };
                     
-                    // 尖角顶点（向量旋转）
                     let pB = {
                         x: pA.x + stepX * cosA - stepY * sinA,
                         y: pA.y + stepX * sinA + stepY * cosA
@@ -984,7 +1108,6 @@
             let iter = n - 1;
             let points = getKochPoints([p1, p2, p3], iter);
 
-            // 开始绘制闭合的多边形
             ctx.beginPath();
             ctx.moveTo(points[0].x, points[0].y);
             for(let i = 1; i < points.length; i++) {
@@ -992,51 +1115,53 @@
             }
             ctx.closePath();
             
-            // 像前面的图案一样使用橙色填充
             ctx.fillStyle = colorOrange; 
             ctx.fill();
             
-            // 加上深色描边，增加立体感与清晰度
             ctx.lineWidth = 1;
             ctx.strokeStyle = '#1f2937'; 
             ctx.stroke();
         }
     }
 
-    // --- 新增：窗口大小变化时重新绘制画布 ---
     window.addEventListener('resize', () => {
         for(let i=4; i<=13; i++) {
             const val = document.getElementById('val-s' + i)?.innerText || 1;
             drawPattern(i, parseInt(val));
         }
-        // 封面画布也重新绘制
-        const ctxCover = document.getElementById('canvas-cover').getContext('2d');
-        ctxCover.clearRect(0, 0, ctxCover.canvas.width, ctxCover.canvas.height);
-        ctxCover.setTransform(1, 0, 0, 1, 0, 0);
-        ctxCover.translate(200, 200); let size = 130;
-        for(let i=0; i<6; i++) {
-            ctxCover.fillStyle = (i%2===0) ? colorOrange : colorBlue;
-            ctxCover.beginPath(); ctxCover.rect(-size, -size, size*2, size*2);
-            ctxCover.fill(); ctxCover.stroke();
-            ctxCover.rotate(Math.PI/4); size /= Math.SQRT2;
+        
+        const coverCanvas = document.getElementById('canvas-cover');
+        if(coverCanvas) {
+            const ctxCover = coverCanvas.getContext('2d');
+            ctxCover.clearRect(0, 0, ctxCover.canvas.width, ctxCover.canvas.height);
+            ctxCover.setTransform(1, 0, 0, 1, 0, 0);
+            ctxCover.translate(200, 200); let size = 130;
+            for(let i=0; i<6; i++) {
+                ctxCover.fillStyle = (i%2===0) ? colorOrange : colorBlue;
+                ctxCover.beginPath(); ctxCover.rect(-size, -size, size*2, size*2);
+                ctxCover.fill(); ctxCover.stroke();
+                ctxCover.rotate(Math.PI/4); size /= Math.SQRT2;
+            }
         }
     });
 
     window.onload = () => {
-        // 初始化封面画布
-        const ctxCover = document.getElementById('canvas-cover').getContext('2d');
-        ctxCover.translate(200, 200); let size = 130;
-        for(let i=0; i<6; i++) {
-            ctxCover.fillStyle = (i%2===0) ? colorOrange : colorBlue;
-            ctxCover.beginPath(); ctxCover.rect(-size, -size, size*2, size*2);
-            ctxCover.fill(); ctxCover.stroke();
-            ctxCover.rotate(Math.PI/4); size /= Math.SQRT2;
+        // Init cover
+        const coverCanvas = document.getElementById('canvas-cover');
+        if(coverCanvas) {
+            const ctxCover = coverCanvas.getContext('2d');
+            ctxCover.translate(200, 200); let size = 130;
+            for(let i=0; i<6; i++) {
+                ctxCover.fillStyle = (i%2===0) ? colorOrange : colorBlue;
+                ctxCover.beginPath(); ctxCover.rect(-size, -size, size*2, size*2);
+                ctxCover.fill(); ctxCover.stroke();
+                ctxCover.rotate(Math.PI/4); size /= Math.SQRT2;
+            }
         }
 
-        // 初始化所有互动画板
+        // Init interactive canvases
         for(let i=4; i<=13; i++) drawPattern(i, 1);
         
-        // 确保按钮逻辑正确初始化
         updateStepButtons();
     };
 </script>
